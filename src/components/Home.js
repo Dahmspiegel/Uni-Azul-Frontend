@@ -1,12 +1,15 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
+import {getWebSocket} from '../webSocketContext';
 
 function Home() {
     const [showDropdown, setShowDropdown] = useState(false);
     const [selectedNumber, setSelectedNumber] = useState(null);
     const [playerTypes, setPlayerTypes] = useState([]);
     const navigate = useNavigate();
+
+    const webSocket = getWebSocket();
 
     const handleNewGameClick = () => {
         setShowDropdown(true);
@@ -36,12 +39,22 @@ function Home() {
             }
         };
 
-        const gameDataJSON = JSON.stringify(gameData);
-        console.log(gameDataJSON);
+        webSocket.sendJsonMessage(gameData);
+        // const gameDataJSON = JSON.stringify(gameData);
+        // console.log(gameDataJSON);
 
-        navigate('/game');
-        console.log('Starte Spiel...');
+        // navigate('/game/');
+        // console.log('Starte Spiel...');
     }
+
+    useEffect(() => {
+        if (webSocket.lastJsonMessage) {
+            const message = webSocket.lastJsonMessage;
+            if (message.event === 'new_game') {
+                navigate('/game/' + message.data.id);
+            }
+        }
+    }, [webSocket.lastJsonMessage]);
 
 
     return (

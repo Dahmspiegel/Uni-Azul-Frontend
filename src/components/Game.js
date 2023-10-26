@@ -1,18 +1,53 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { getWebSocket } from '../webSocketContext';
 
 function Game() {
-    const newGame = () => {
-        sendJsonMessage({
-            "event": "new_game",
-            "data": {
-                "players": [
-                    { "name": "Player 1", "type": "human" },
-                    { "name": "Player 2", "type": "computer" }
-                ]
-            }
-        });
+
+    const [gameStatus, setGameStatus] = useState('not_found');
+
+    const { gameId } = useParams();
+
+    useEffect(() => {
+        if (gameId) {
+            setGameStatus('created');
+        }
     }
-    
+        , [gameId]);
+
+    const numberOfPlayers = useState(0);
+    const numberOfFactories = useState(5);
+    const [board, setBoard] = useState();
+
+    const webSocket = getWebSocket();
+
+    useEffect(() => {
+        if (webSocket.lastJsonMessage) {
+            const message = webSocket.lastJsonMessage;
+
+            if (message.event === 'start_game' && message.data.id === gameId) {
+                setGameStatus('started');
+            }
+
+            if (message.event === 'game_state_update') {
+                if (gameStatus !== 'running') setGameStatus('running');
+                setBoard(message.data);
+                console.log(message.data);
+            }
+        }
+    }, [webSocket.lastJsonMessage]);
+
+    const startGame = () => {
+        const gameData = {
+            event: "start_game",
+            data: {
+                id: gameId
+            }
+        };
+
+        webSocket.sendJsonMessage(gameData);
+    };
+
     const styles = {
         scoreSquare: {
             width: '2vw',
@@ -53,20 +88,66 @@ function Game() {
         }
     };
 
+    function flattenTiles(tiles) {
+        const result = [];
+        tiles.forEach(tile => {
+            for (let i = 0; i < tile.number_of_tiles; i++) {
+                result.push(convertColor(tile.color));
+            }
+        });
+        return result;
+    }
 
-    function Factory() {
+    function convertColor(color) {
+        switch (color) {
+            case 'B': return 'blue';
+            case 'Y': return 'yellow';
+            case 'R': return 'red';
+            case 'K': return 'black';
+            default: return 'white';
+        }
+    }
+
+    function Factory({ tiles }) { // Destructure factory from props
+        const flatTiles = flattenTiles(tiles);
+
         return (
-            <div>
-                {Array.from({ length: 2 }).map((_, rowIndex) => (
-                    <div key={rowIndex} style={styles.row}>
-                        {Array.from({ length: 2 }).map((_, colIndex) => (
-                            <div key={colIndex} style={styles.wallSquare}></div>
-                        ))}
-                    </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1px' }}>
+                {flatTiles.map((color, index) => (
+                    // <div key={index} style={{ width: '10px', height: '10px' }}>
+                    //     {color}
+                    // </div>
+                    <PatternSquare key={index} border='1px solid black' backgroundColor={color} />
                 ))}
             </div>
         );
     }
+    // function Factory(tiles) {
+    //     const flatTiles = flattenTiles(tiles);
+
+    //     return (
+    //         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
+    //             {flatTiles.map((color, index) => (
+    //                 <div key={index} style={{ width: '10px', height: '10px'}}>
+    //                 {/* <div key={index} style={{ width: '50px', height: '50px', backgroundColor: color }}> */}
+    //                     {color}
+    //                 </div>
+    //             ))}
+    //         </div>
+    //     );
+    //     // return (
+    //     //     <div>
+    //     //         {Array.from({ length: 2 }).map((_, rowIndex) => (
+    //     //             <div key={rowIndex} style={styles.row}>
+    //     //                 {Array.from({ length: 2 }).map((_, colIndex) => (
+    //     //                     <PatternSquare key={colIndex} border='1px solid black' backgroundColor={factory}/>
+    //     //                     // <div key={colIndex} style={styles.wallSquare}></div>
+    //     //                 ))}
+    //     //             </div>
+    //     //         ))}
+    //     //     </div>
+    //     // );
+    // }
 
     function Center() {
         return (
@@ -85,12 +166,12 @@ function Game() {
     }
 
 
-    function Factories() {
+    function Factories({ factories }) {
         return (
             <div style={styles.factoryRow}>
-                {Array.from({ length: numberOfFactories + 1 }).map((_, index) => (
+                {factories.map((fac, index) => (
                     <div key={index}>
-                        {index === numberOfFactories ? <Center /> : <Factory />}
+                        {fac.is_center ? <Center /> : <Factory tiles={factories[index].tiles} />}
                     </div>
                 ))}
             </div>
@@ -206,17 +287,34 @@ function Game() {
     }
 
     return (
-        <div style={styles.board}>
-            <button onClick={newGame}>new Game</button>
-            {/* <div className="board-row" style={styles.factoryRow}>
-                <Factories />
-            </div>
-            <div className="board-row" style={styles.boardRow}>
-                {Array.from({ length: numberOfPlayers }).map((_, index) => (
-                    <PlayerBoard key={index} numberOfPlayers={numberOfPlayers} />
-                ))}
-            </div> */}
-        </div>
+        <>
+            {(gameStatus === "not_found") && (
+                <h1>Not found</h1>
+            )}
+
+            {(gameStatus === "created") && (
+                <div>
+                    <h1>Game created, waiting for player</h1>
+                    <button onClick={startGame}>Start Game</button>
+                </div>
+            )}
+
+            {(gameStatus === "running") && (
+                <>
+                    <h1>Game started</h1>
+                    <div style={styles.board}>
+                        <div className="board-row" style={styles.factoryRow}>
+                            <Factories factories={board.factories} />
+                        </div>
+                        <div className="board-row" style={styles.boardRow}>
+                            {Array.from({ length: numberOfPlayers }).map((_, index) => (
+                                <PlayerBoard key={index} numberOfPlayers={numberOfPlayers} />
+                            ))}
+                        </div>
+                    </div>
+                </>
+            )}
+        </>
     );
 }
 

@@ -5,6 +5,7 @@ import useWebSocket from "react-use-websocket";
 import { BrowserRouter as Router, Route, Routes, Link } from 'react-router-dom';
 import Home from './components/Home';
 import Game from './components/Game'; // Ich nehme an, dass Sie hier einen kleinen Fehler gemacht haben und "Game" wirklich die "About"-Seite ist.
+import {WebSocketContext} from "./webSocketContext";
 
 const socketURL = "ws://localhost:3001";
 
@@ -14,14 +15,19 @@ export default function App() {
   const [squares, setSquare] = useState(Array(100).fill(null));
   const [playerBords, setPlayerBord] = useState(Array(numberOfPlayers).fill(null));
   const [messages, setMessages] = useState([]);
-  const {
-    sendJsonMessage,
-    lastJsonMessage
-  } = useWebSocket(socketURL, {
+  const webSocket = useWebSocket(socketURL, {
     onOpen: () => console.log("Connection established"),
-    onMessage: (msg) => console.log(msg),
     shouldReconnect: (_) => true
   });
+
+  useEffect(() => {
+    if (webSocket.lastJsonMessage) {
+      setMessages(prev => [...prev, webSocket.lastJsonMessage]);
+      console.log(webSocket.lastJsonMessage);
+    }
+  }
+  ,[webSocket.lastJsonMessage]);
+
 
 
   return (
@@ -34,15 +40,12 @@ export default function App() {
             <li><Link to="/game">Game</Link></li>
           </ul>
         </nav>
-
-        {/* Routing */}
-        <Routes>
-          <Route path="/" exact Component={Home} />
-          <Route path="/game" Component={Game} />
-          {/* Hier können Sie weitere Routen hinzufügen, wenn Sie möchten. */}
-        </Routes>
-
-        {/* Hier können Sie den Rest Ihres App-Inhalts hinzufügen. */}
+        <WebSocketContext.Provider value={webSocket}>
+          <Routes>
+            <Route path="/" exact element={<Home />} />
+            <Route path="/game/:gameId" Component={Game} />
+          </Routes>
+        </WebSocketContext.Provider>
       </div>
     </Router>
   );

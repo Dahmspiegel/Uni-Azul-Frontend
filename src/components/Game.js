@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { getWebSocket } from '../webSocketContext';
+import { gameData } from './GameData';
 
 function Game() {
 
     const [gameStatus, setGameStatus] = useState('not_found');
+    // const [gameStatus, setGameStatus] = useState('running');
 
     const { gameId } = useParams();
 
@@ -12,12 +14,12 @@ function Game() {
         if (gameId) {
             setGameStatus('created');
         }
-    }
-        , [gameId]);
+    }, [gameId]);
 
     const numberOfPlayers = useState(0);
     const numberOfFactories = useState(5);
     const [board, setBoard] = useState();
+    // const [board, setBoard] = useState(gameData.data);
 
     const webSocket = getWebSocket();
 
@@ -32,7 +34,6 @@ function Game() {
             if (message.event === 'game_state_update') {
                 if (gameStatus !== 'running') setGameStatus('running');
                 setBoard(message.data);
-                console.log(message.data);
             }
         }
     }, [webSocket.lastJsonMessage]);
@@ -113,7 +114,6 @@ function Game() {
     }
 
     function Factory({ tiles }) {
-        console.log(tiles);
         const flatTiles = flattenTiles(tiles);
 
         return (
@@ -126,34 +126,18 @@ function Game() {
     }
 
     function Center({ tiles }) {
-        console.log('Center', { tiles });
-
         return (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1px' }}>
                 {tiles.map((tile, index) => (
-                    console.log(tile, tile.color, convertColor(tile.color)),
                     <PatternSquare key={index} border='1px solid black' backgroundColor={convertColor(tile.color)} text={tile.number_of_tiles} />
                 ))}
             </div>
         );
-
-        // return (
-        //     <div>
-        //         {Array.from({ length: 2 }).map((_, rowIndex) => (
-        //             <div key={rowIndex} style={styles.row}>
-        //                 {Array.from({ length: 3 }).map((_, colIndex) =>
-        //                     (rowIndex === 1 && colIndex === 2) ?
-        //                         <div key={colIndex} style={styles.whiteSquare}></div> :
-        //                         <div key={colIndex} style={styles.wallSquare}></div>
-        //                 )}
-        //             </div>
-        //         ))}
-        //     </div>
-        // );
     }
 
 
     function Factories({ factories }) {
+        console.log(factories);
         return (
             <div style={styles.factoryRow}>
                 {factories.map((fac, index) => (
@@ -272,6 +256,8 @@ function Game() {
             </>
         )
     }
+
+    console.log(board);
 
     return (
         <>

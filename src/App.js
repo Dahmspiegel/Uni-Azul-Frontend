@@ -44,6 +44,7 @@ export default function App() {
           <Routes>
             <Route path="/" exact element={<Home />} />
             <Route path="/game/:gameId" Component={Game} />
+            {/* <Route path="/game" Component={Game} /> */}
           </Routes>
         </WebSocketContext.Provider>
       </div>

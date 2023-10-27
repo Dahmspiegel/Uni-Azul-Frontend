@@ -60,6 +60,10 @@ function Game() {
             height: '3.2vw',
             display: 'inline-block',
             margin: '0.2vw',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            color: 'grey',
         },
         wallSquare: {
             width: '3.2vw',
@@ -108,61 +112,44 @@ function Game() {
         }
     }
 
-    function Factory({ tiles }) { // Destructure factory from props
+    function Factory({ tiles }) {
+        console.log(tiles);
         const flatTiles = flattenTiles(tiles);
 
         return (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1px' }}>
                 {flatTiles.map((color, index) => (
-                    // <div key={index} style={{ width: '10px', height: '10px' }}>
-                    //     {color}
-                    // </div>
                     <PatternSquare key={index} border='1px solid black' backgroundColor={color} />
                 ))}
             </div>
         );
     }
-    // function Factory(tiles) {
-    //     const flatTiles = flattenTiles(tiles);
 
-    //     return (
-    //         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
-    //             {flatTiles.map((color, index) => (
-    //                 <div key={index} style={{ width: '10px', height: '10px'}}>
-    //                 {/* <div key={index} style={{ width: '50px', height: '50px', backgroundColor: color }}> */}
-    //                     {color}
-    //                 </div>
-    //             ))}
-    //         </div>
-    //     );
-    //     // return (
-    //     //     <div>
-    //     //         {Array.from({ length: 2 }).map((_, rowIndex) => (
-    //     //             <div key={rowIndex} style={styles.row}>
-    //     //                 {Array.from({ length: 2 }).map((_, colIndex) => (
-    //     //                     <PatternSquare key={colIndex} border='1px solid black' backgroundColor={factory}/>
-    //     //                     // <div key={colIndex} style={styles.wallSquare}></div>
-    //     //                 ))}
-    //     //             </div>
-    //     //         ))}
-    //     //     </div>
-    //     // );
-    // }
+    function Center({ tiles }) {
+        console.log('Center', { tiles });
 
-    function Center() {
         return (
-            <div>
-                {Array.from({ length: 2 }).map((_, rowIndex) => (
-                    <div key={rowIndex} style={styles.row}>
-                        {Array.from({ length: 3 }).map((_, colIndex) =>
-                            (rowIndex === 1 && colIndex === 2) ?
-                                <div key={colIndex} style={styles.whiteSquare}></div> :
-                                <div key={colIndex} style={styles.wallSquare}></div>
-                        )}
-                    </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1px' }}>
+                {tiles.map((tile, index) => (
+                    console.log(tile, tile.color, convertColor(tile.color)),
+                    <PatternSquare key={index} border='1px solid black' backgroundColor={convertColor(tile.color)} text={tile.number_of_tiles} />
                 ))}
             </div>
         );
+
+        // return (
+        //     <div>
+        //         {Array.from({ length: 2 }).map((_, rowIndex) => (
+        //             <div key={rowIndex} style={styles.row}>
+        //                 {Array.from({ length: 3 }).map((_, colIndex) =>
+        //                     (rowIndex === 1 && colIndex === 2) ?
+        //                         <div key={colIndex} style={styles.whiteSquare}></div> :
+        //                         <div key={colIndex} style={styles.wallSquare}></div>
+        //                 )}
+        //             </div>
+        //         ))}
+        //     </div>
+        // );
     }
 
 
@@ -171,7 +158,7 @@ function Game() {
             <div style={styles.factoryRow}>
                 {factories.map((fac, index) => (
                     <div key={index}>
-                        {fac.is_center ? <Center /> : <Factory tiles={factories[index].tiles} />}
+                        {fac.is_center ? <Center tiles={factories[index].tiles} /> : <Factory tiles={factories[index].tiles} />}
                     </div>
                 ))}
             </div>
@@ -180,8 +167,8 @@ function Game() {
 
 
 
-    function PatternSquare({ border, backgroundColor }) {
-        return <div style={{ ...styles.whiteSquare, border, backgroundColor }}></div>;
+    function PatternSquare({ border, backgroundColor, text }) {
+        return <div style={{ ...styles.whiteSquare, border, backgroundColor }}>{text}</div>;
     }
 
     function Pattern() {

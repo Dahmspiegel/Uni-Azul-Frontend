@@ -7,6 +7,7 @@ function Game() {
 
     const [gameStatus, setGameStatus] = useState('not_found');
     // const [gameStatus, setGameStatus] = useState('running');
+    const collorPalett = ['blue', 'yellow', 'red', 'black', 'lightgrey']
 
     const { gameId } = useParams();
 
@@ -54,11 +55,14 @@ function Game() {
             width: '2vw',
             height: '2vw',
             display: 'inline-block',
+            border: '0.1vw solid black',
             margin: '0',
+            alignItems: 'center',
+            justifyContent: 'center',
         },
         whiteSquare: {
-            width: '3.2vw',
-            height: '3.2vw',
+            width: '3vw',
+            height: '3vw',
             display: 'inline-block',
             margin: '0.2vw',
             display: 'flex',
@@ -89,8 +93,23 @@ function Game() {
             justifyContent: 'left',
             alignItems: 'left',
             marginTop: '1vw',
-            minWidth: '2000px'
-        }
+            minWidth: '100px'
+        },
+        playerBoardWrapper: {
+            padding: '10px',
+            marginBottom: '10px',
+            display: 'inline-block'
+        },
+        playerBoard: {
+            display: 'grid',
+            gridTemplateColumns: 'repeat(2, 1fr)',
+            gap: '1px',
+        },
+        floorLine: {
+            display: 'grid',
+            gridTemplateColumns: 'repeat(11, 1fr)',
+            marginTop: '5px'
+        },
     };
 
     function flattenTiles(tiles) {
@@ -100,6 +119,12 @@ function Game() {
                 result.push(convertColor(tile.color));
             }
         });
+
+        if (result.length === 0) {
+            for (let i = 0; i < 4; i++) {
+                result.push("white");
+            }
+        }
         return result;
     }
 
@@ -109,7 +134,7 @@ function Game() {
             case 'Y': return 'yellow';
             case 'R': return 'red';
             case 'K': return 'black';
-            default: return 'white';
+            default: return 'lightgrey';
         }
     }
 
@@ -137,7 +162,6 @@ function Game() {
 
 
     function Factories({ factories }) {
-        console.log(factories);
         return (
             <div style={styles.factoryRow}>
                 {factories.map((fac, index) => (
@@ -151,89 +175,139 @@ function Game() {
 
 
 
-    function PatternSquare({ border, backgroundColor, text }) {
-        return <div style={{ ...styles.whiteSquare, border, backgroundColor }}>{text}</div>;
+    function PatternSquare({ border, backgroundColor, text, opacity }) {
+        return <div style={{ ...styles.whiteSquare, border, backgroundColor, opacity }}>{text}</div>;
     }
 
-    function Pattern() {
+
+
+
+    function getPatternLineData({ index, patternData }) {
+        const lineData = patternData.find(data => data.patern_line_index === index);
+        if (lineData) {
+            return {
+                color: convertColor(lineData.color),
+                tiles: lineData.number_of_tiles
+            };
+        }
+        return null;
+    }
+
+    function Pattern({ playerNumber, patternData }) {
         return (
-            <div>
+            <div className="grid">
+                {Array.from({ length: 25 }).map((_, index) => {
+                    const rowIndex = Math.floor(index / 5);
+                    const colIndex = index % 5;
+                    const currentPatternLine = getPatternLineData({ index: rowIndex, patternData: patternData });
+
+                    if (colIndex < 4 - rowIndex) {
+                        return <PatternSquare key={index} border='1px solid white' />;
+                    } else {
+                        if (currentPatternLine && 4-colIndex < currentPatternLine.tiles) {
+                            return <PatternSquare key={index} border='1px solid black' backgroundColor={currentPatternLine.color} />;
+                        }
+                        return <PatternSquare key={index} border='1px solid black' backgroundColor='white' />;
+                    }
+                })}
+            </div>
+        );
+    }
+
+    function isWallFieldPresent(row, col, wall) {
+        return wall.some(field => field.row === row && field.col === col);
+    }
+
+
+    function Wall({ playerNumber, wallData }) {
+        return (
+            <div className="grid">
                 {Array.from({ length: 5 }).map((_, rowIndex) => (
-                    <div key={rowIndex} style={styles.row}>
-                        {Array.from({ length: 4 - rowIndex }).map((_, colIndex) => (
-                            <PatternSquare key={colIndex} border='1px solid white' />
-                        ))}
-                        {Array.from({ length: 5 - (4 - rowIndex) }).map((_, colIndex) => (
-                            <PatternSquare key={colIndex} border='1px solid black' backgroundColor='white' />
-                        ))}
-                    </div>
+                    <React.Fragment key={rowIndex}>
+                        {Array.from({ length: 5 }).map((_, colIndex) => {
+                            const colorIndex = (rowIndex + 5 - colIndex) % 5;
+                            const opacityValue = isWallFieldPresent(rowIndex, colIndex, wallData) ? 1 : 0.25;
+                            return (
+                                <PatternSquare
+                                    key={rowIndex * 5 + colIndex}
+                                    border='1px solid black'
+                                    backgroundColor={collorPalett[colorIndex]}
+                                    opacity={opacityValue}
+                                />
+                            );
+                        })}
+                    </React.Fragment>
                 ))}
             </div>
         );
     }
 
-    function Wall() {
-        return (
-            <div>
-                {Array.from({ length: 5 }).map((_, rowIndex) => (
-                    <div key={rowIndex} style={styles.row}>
-                        {Array.from({ length: 5 }).map((_, colIndex) => (
-                            <div key={colIndex} style={styles.wallSquare}></div>
-                        ))}
-                    </div>
-                ))}
-            </div>
-        );
-    }
 
-    function FloorLine(props) {
+
+
+    function FloorLine({ floorLineProgress }) {
         return (
-            <div style={{ ...styles.row, ...props.style }}>
+            <div style={{ ...styles.floorLine }}>
                 {Array.from({ length: 7 }).map((_, colIndex) => (
-                    <PatternSquare key={colIndex} border='1px solid black' backgroundColor='white' />
+                    <PatternSquare key={colIndex} border='1px solid black' backgroundColor={colIndex < floorLineProgress ? 'grey' : 'white'} />
                 ))}
             </div>
         );
     }
 
-    // Ändern Sie den Stil basierend auf dem `value`-Prop
-    function Square(props) {
+    function ScoreBoardSquare(props) {
+        const { color, number } = props; // Destructuring the props to get color and number
+
         return (
-            <button
-                onClick={props.onSquareClick}
+            <div
                 style={{
                     ...styles.scoreSquare,
-                    fontSize: '14px',
-                    backgroundColor: props.value ? 'red' : 'white'  // Farbänderung basierend auf value (hier: wenn 'X' dann rot, sonst weiß)
+                    fontSize: '12px',
+                    backgroundColor: color,
                 }}
             >
-                {props.number}
-            </button>
+                {number}
+            </div>
         );
     }
 
-    function ScoreBoard() {
-        const [scoreSquares, setScoreSquares] = useState(Array(100).fill(null));
-
-        const handleClick = (index) => {
-            const newSquares = [...scoreSquares];
-            newSquares[index] = newSquares[index] ? null : 'X';  // Umschalten zwischen null und 'X'
-            setScoreSquares(newSquares);
-        };
-
+    function ScoreBoard({ score }) {
+        let scoreColor = "grey";
+        if (score === undefined) score = 0;
+        else if (score < 0) {
+            score = 100 + score;
+            scoreColor = "red";
+        }
+        else if (score > 100) {
+            score = score % 100;
+            scoreColor = "lightgreen";
+        }
         const scoreRows = [];
+        let currentNumber = 0;
+
         scoreRows.push(
             <div className="board-row" key={0}>
-                <Square key={0} number={0} value={scoreSquares[0]} onSquareClick={() => handleClick(0)} />
+                <ScoreBoardSquare
+                    key={currentNumber}
+                    number={currentNumber}
+                    color={currentNumber === score ? scoreColor : "white"}
+                />
             </div>
         );
 
         for (let i = 1; i <= 100; i += 20) {
             scoreRows.push(
                 <div className="board-row" key={i}>
-                    {Array.from({ length: 20 }).map((_, j) => (
-                        <Square key={j + i} number={j + i} value={scoreSquares[j + i]} onSquareClick={() => handleClick(j + i)} />
-                    ))}
+                    {Array.from({ length: 20 }).map((_, j) => {
+                        currentNumber = j + i;
+                        return (
+                            <ScoreBoardSquare
+                                key={currentNumber}
+                                number={currentNumber}
+                                color={currentNumber === score ? scoreColor : "white"}
+                            />
+                        );
+                    })}
                 </div>
             );
         }
@@ -243,22 +317,24 @@ function Game() {
 
 
 
-    function PlayerBoard() {
+    function PlayerBoard({ playerData, playerNumber, currentPlayer }) {
         return (
-            <>
-                <ScoreBoard />
+            <div style={{
+                ...styles.playerBoardWrapper,
+                border: playerNumber === currentPlayer ? '2px solid red' : '2px solid black'
+            }}>
+                <ScoreBoard score={playerData.score} />
                 <div style={styles.gameComponents}>
-                    <Pattern />
-                    <div style={{ width: '60px' }}></div>
-                    <Wall />
+                    <Pattern playerNumber={playerNumber} patternData={playerData.pattern} />
+                    <div style={{ width: '5vw' }}></div>
+                    <Wall playerNumber={playerNumber} wallData={playerData.wall} />
                 </div>
-                <FloorLine style={{ marginTop: '5px' }} />
-            </>
-        )
+                <FloorLine floorLineProgress={playerData.floor_line_progress} />
+            </div>
+        );
     }
 
-    console.log(board);
-
+    // console.log(board);
     return (
         <>
             {(gameStatus === "not_found") && (
@@ -280,8 +356,8 @@ function Game() {
                             <Factories factories={board.factories} />
                         </div>
                         <div className="board-row" style={styles.boardRow}>
-                            {Array.from({ length: numberOfPlayers }).map((_, index) => (
-                                <PlayerBoard key={index} numberOfPlayers={numberOfPlayers} />
+                            {Array.from({ length: board.players.length }).map((_, index) => (
+                                <PlayerBoard key={index} playerData={board.players[index]} playerNumber={index} currentPlayer={board.current_player} />
                             ))}
                         </div>
                     </div>

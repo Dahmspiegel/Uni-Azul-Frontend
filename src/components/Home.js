@@ -79,6 +79,7 @@ function Home() {
                                         <select value={type} onChange={e => handlePlayerTypeChange(index, e.target.value)}>
                                             <option value="human">Mensch</option>
                                             <option value="computer">Computer</option>
+                                            <option value="greedy">Computer-greedy</option>
                                         </select>
                                     </div>
                                 ))}

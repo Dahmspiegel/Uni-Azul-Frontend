@@ -92,3 +92,10 @@ body {
 .playerSelectBox{
   height: 20px;
 }
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(5, 3.3vw);
+  grid-auto-rows: 3.3vw;
+  grid-gap: 2px;
+}

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { getWebSocket } from '../webSocketContext';
+import { MoveContext, getMove } from '../MoveContext';
 import { gameData } from './GameData';
 
 function Game() {
@@ -17,10 +18,12 @@ function Game() {
         }
     }, [gameId]);
 
-    const numberOfPlayers = useState(0);
-    const numberOfFactories = useState(5);
     const [board, setBoard] = useState();
     // const [board, setBoard] = useState(gameData.data);
+    const [posMoves, setPosMoves] = useState([]);
+    const [requestID, setReqestId] = useState([]);
+    const [showMoves, setShowMoves] = useState([]);
+    const [myPattern, setMyPattern] = useState();
 
     const webSocket = getWebSocket();
 
@@ -36,6 +39,12 @@ function Game() {
                 if (gameStatus !== 'running') setGameStatus('running');
                 setBoard(message.data);
             }
+            else if (message.event === 'move_request') {
+                console.log(message.data);
+                setPosMoves(message.data.move_list);
+                setShowMoves(message.data.move_list);
+                setReqestId(message.data.request_id);
+            }
         }
     }, [webSocket.lastJsonMessage]);
 
@@ -50,6 +59,51 @@ function Game() {
         webSocket.sendJsonMessage(gameData);
     };
 
+    const moveContext = {
+        selectTile: (factoryId, color) => {
+            if (color === 'white') return;
+            setShowMoves(posMoves.filter(move => move.take_from_factory_index === factoryId && move.color === color));
+            setMyPattern([0, 0, 0, 0, 0, 0]);
+        },
+        selectRow: (rowIndex) => {
+            if (showMoves.length === 0) return;
+            const newPattern = [...myPattern];
+            newPattern[rowIndex] = myPattern[rowIndex] + 1;
+
+            let mySum = newPattern.reduce((acc, curr) => acc + curr, 0);
+            const goalSum = showMoves[0].pattern.reduce((acc, curr) => acc + curr, 0);
+
+            console.log("newPattern:", newPattern, "Sum:", mySum);
+
+            if (mySum === goalSum) {
+                let newShowMoves = showMoves.filter(move => arraysAreEqual(move.pattern, newPattern));
+
+                if (newShowMoves.length == 1) {
+                    let moveData = {
+                        event: "move_response",
+                        data: {
+                            request_id: requestID,
+                            move_index: posMoves.indexOf(newShowMoves[0])
+                        }
+                    };
+                    console.log('Valid move', moveData);
+                    webSocket.sendJsonMessage(moveData);
+                }
+            }
+
+            setMyPattern(newPattern);
+        }
+
+    };
+
+    function arraysAreEqual(arr1, arr2) {
+        return arr1.length === arr2.length && arr1.every((value, index) => value === arr2[index]);
+    }
+
+    useEffect(() => {
+        console.log("showMoves:", showMoves);
+    }, [showMoves]);
+
     const styles = {
         scoreSquare: {
             width: '2vw',
@@ -60,7 +114,7 @@ function Game() {
             alignItems: 'center',
             justifyContent: 'center',
         },
-        whiteSquare: {
+        tileSquare: {
             width: '3vw',
             height: '3vw',
             display: 'inline-block',
@@ -69,17 +123,6 @@ function Game() {
             justifyContent: 'center',
             alignItems: 'center',
             color: 'grey',
-        },
-        wallSquare: {
-            width: '3.2vw',
-            height: '3.2vw',
-            display: 'inline-block',
-            border: '0.1vw solid black',
-            margin: '0.2vw',
-        },
-        row: {},
-        board: {
-            gap: '2vw',
         },
         boardRow: {
             marginBottom: '2vw',
@@ -116,7 +159,7 @@ function Game() {
         const result = [];
         tiles.forEach(tile => {
             for (let i = 0; i < tile.number_of_tiles; i++) {
-                result.push(convertColor(tile.color));
+                result.push(tile.color);
             }
         });
 
@@ -134,55 +177,65 @@ function Game() {
             case 'Y': return 'yellow';
             case 'R': return 'red';
             case 'K': return 'black';
-            default: return 'lightgrey';
+            case 'W': return 'lightgrey';
+            default: return 'white';
         }
     }
 
-    function Factory({ tiles }) {
+    function Factory({ tiles, factoryIndex }) {
         const flatTiles = flattenTiles(tiles);
+
+        const moveContext = getMove();
 
         return (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1px' }}>
                 {flatTiles.map((color, index) => (
-                    <PatternSquare key={index} border='1px solid black' backgroundColor={color} />
+                    <PatternSquare
+                        key={index}
+                        border='1px solid black'
+                        backgroundColor={convertColor(color)}
+                        onClick={() => moveContext.selectTile(factoryIndex, color)}
+                    />
                 ))}
             </div>
         );
     }
 
-    function Center({ tiles }) {
+    function Center({ tiles, factoryIndex }) {
+        const moveContext = getMove();
+
         return (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1px' }}>
                 {tiles.map((tile, index) => (
-                    <PatternSquare key={index} border='1px solid black' backgroundColor={convertColor(tile.color)} text={tile.number_of_tiles} />
+                    <PatternSquare
+                        key={index}
+                        border='1px solid black'
+                        backgroundColor={convertColor(tile.color)}
+                        text={tile.number_of_tiles}
+                        onClick={() => moveContext.selectTile(factoryIndex, tile.color)}
+                    />
                 ))}
             </div>
         );
     }
-
 
     function Factories({ factories }) {
         return (
             <div style={styles.factoryRow}>
                 {factories.map((fac, index) => (
                     <div key={index}>
-                        {fac.is_center ? <Center tiles={factories[index].tiles} /> : <Factory tiles={factories[index].tiles} />}
+                        {fac.is_center ? <Center tiles={fac.tiles} factoryIndex={index} /> : <Factory tiles={fac.tiles} factoryIndex={index} />}
                     </div>
                 ))}
             </div>
         );
     }
 
-
-
-    function PatternSquare({ border, backgroundColor, text, opacity }) {
-        return <div style={{ ...styles.whiteSquare, border, backgroundColor, opacity }}>{text}</div>;
+    function PatternSquare({ border, backgroundColor, text, opacity, onClick }) {
+        return <div style={{ ...styles.tileSquare, border, backgroundColor, opacity }} onClick={onClick}>{text}</div>;
     }
 
-
-
-
-    function getPatternLineData({ index, patternData }) {
+    function getPatternLineFill({ index, patternData }) {
         const lineData = patternData.find(data => data.patern_line_index === index);
         if (lineData) {
             return {
@@ -199,15 +252,16 @@ function Game() {
                 {Array.from({ length: 25 }).map((_, index) => {
                     const rowIndex = Math.floor(index / 5);
                     const colIndex = index % 5;
-                    const currentPatternLine = getPatternLineData({ index: rowIndex, patternData: patternData });
+                    const currentPatternLine = getPatternLineFill({ index: rowIndex, patternData: patternData });
+                    // const color = flatTiles[index];
 
                     if (colIndex < 4 - rowIndex) {
-                        return <PatternSquare key={index} border='1px solid white' />;
+                        return <PatternSquare key={index} border='1px solid white' onClick={() => moveContext.selectRow(rowIndex)} />;
                     } else {
-                        if (currentPatternLine && 4-colIndex < currentPatternLine.tiles) {
-                            return <PatternSquare key={index} border='1px solid black' backgroundColor={currentPatternLine.color} />;
+                        if (currentPatternLine && 4 - colIndex < currentPatternLine.tiles) {
+                            return <PatternSquare key={index} border='1px solid black' backgroundColor={currentPatternLine.color} onClick={() => moveContext.selectRow(rowIndex)} />;
                         }
-                        return <PatternSquare key={index} border='1px solid black' backgroundColor='white' />;
+                        return <PatternSquare key={index} border='1px solid black' backgroundColor='white' onClick={() => moveContext.selectRow(rowIndex)} />;
                     }
                 })}
             </div>
@@ -249,14 +303,14 @@ function Game() {
         return (
             <div style={{ ...styles.floorLine }}>
                 {Array.from({ length: 7 }).map((_, colIndex) => (
-                    <PatternSquare key={colIndex} border='1px solid black' backgroundColor={colIndex < floorLineProgress ? 'grey' : 'white'} />
+                    <PatternSquare key={colIndex} border='1px solid black' backgroundColor={colIndex < floorLineProgress ? 'grey' : 'white'} onClick={() => moveContext.selectRow(5)} />
                 ))}
             </div>
         );
     }
 
     function ScoreBoardSquare(props) {
-        const { color, number } = props; // Destructuring the props to get color and number
+        const { color, number } = props;
 
         return (
             <div
@@ -349,7 +403,7 @@ function Game() {
             )}
 
             {(gameStatus === "running") && (
-                <>
+                <MoveContext.Provider value={moveContext}>
                     <h1>Game started</h1>
                     <div style={styles.board}>
                         <div className="board-row" style={styles.factoryRow}>
@@ -361,7 +415,7 @@ function Game() {
                             ))}
                         </div>
                     </div>
-                </>
+                </MoveContext.Provider>
             )}
         </>
     );

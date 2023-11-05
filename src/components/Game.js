@@ -279,7 +279,7 @@ function Game() {
                 {Array.from({ length: 5 }).map((_, rowIndex) => (
                     <React.Fragment key={rowIndex}>
                         {Array.from({ length: 5 }).map((_, colIndex) => {
-                            const colorIndex = (rowIndex + 5 - colIndex) % 5;
+                            const colorIndex = (colIndex + 5 - rowIndex) % 5;
                             const opacityValue = isWallFieldPresent(rowIndex, colIndex, wallData) ? 1 : 0.25;
                             return (
                                 <PatternSquare
@@ -388,7 +388,6 @@ function Game() {
         );
     }
 
-    // console.log(board);
     return (
         <>
             {(gameStatus === "not_found") && (
@@ -404,7 +403,7 @@ function Game() {
 
             {(gameStatus === "running") && (
                 <MoveContext.Provider value={moveContext}>
-                    <h1>Game started</h1>
+                    <h1>{"Spieler " + board.current_player + " ist am Zug"}</h1>
                     <div style={styles.board}>
                         <div className="board-row" style={styles.factoryRow}>
                             <Factories factories={board.factories} />

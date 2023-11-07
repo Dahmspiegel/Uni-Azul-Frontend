@@ -10,10 +10,6 @@ import {WebSocketContext} from "./webSocketContext";
 const socketURL = "ws://localhost:3001";
 
 export default function App() {
-  const [numberOfPlayers, setNumberOfPlayers] = useState(2);
-  const numberOfFactories = 9;
-  const [squares, setSquare] = useState(Array(100).fill(null));
-  const [playerBords, setPlayerBord] = useState(Array(numberOfPlayers).fill(null));
   const [messages, setMessages] = useState([]);
   const webSocket = useWebSocket(socketURL, {
     onOpen: () => console.log("Connection established"),

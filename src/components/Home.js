@@ -40,11 +40,6 @@ function Home() {
         };
 
         webSocket.sendJsonMessage(gameData);
-        // const gameDataJSON = JSON.stringify(gameData);
-        // console.log(gameDataJSON);
-
-        // navigate('/game/');
-        // console.log('Starte Spiel...');
     }
 
     useEffect(() => {
@@ -80,6 +75,7 @@ function Home() {
                                             <option value="human">Mensch</option>
                                             <option value="greedy">Computer-greedy</option>
                                             <option value="random">Computer-random</option>
+                                            <option value="mcts">Computer-Baum</option>
                                         </select>
                                     </div>
                                 ))}

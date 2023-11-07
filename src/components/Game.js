@@ -2,14 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { getWebSocket } from '../webSocketContext';
 import { MoveContext, getMove } from '../MoveContext';
-import imageSrc from '../images/Azul_Kachel_Blau.png';
 const images = require.context('../images/', false, /\.png$/);
 import { gameData } from './GameData';
 
 function Game() {
 
-    const [gameStatus, setGameStatus] = useState('not_found');
-    // const [gameStatus, setGameStatus] = useState('running');
+    // const [gameStatus, setGameStatus] = useState('not_found');
+    const [gameStatus, setGameStatus] = useState('running');
     const collorPalett = ['Blau', 'Grün', 'Rot', 'Lila', 'Weiß']
 
     const { gameId } = useParams();
@@ -20,8 +19,8 @@ function Game() {
         }
     }, [gameId]);
 
-    const [board, setBoard] = useState();
-    // const [board, setBoard] = useState(gameData.data);
+    const [board, setBoard] = useState(gameData.data);
+    // const [board, setBoard] = useState();
     const [posMoves, setPosMoves] = useState([]);
     const [requestID, setReqestId] = useState([]);
     const [showMoves, setShowMoves] = useState([]);
@@ -125,8 +124,13 @@ function Game() {
             color: 'grey',
         },
         boardRow: {
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gridTemplateRows: '1fr 1fr',
+            gap: '1.5vw',
             marginBottom: '2vw',
         },
+
         factoryRow: {
             display: 'flex',
             gap: '1vw'
@@ -138,10 +142,13 @@ function Game() {
             marginTop: '1vw',
             minWidth: '100px'
         },
-        playerBoardWrapper: {
+        darkBoardWraper: {
             padding: '10px',
             marginBottom: '10px',
-            display: 'inline-block'
+            display: 'inline-block',
+            boxShadow: 'inset 10px 10px 10px rgba(0, 0, 0, 0.3), inset -10px -10px 20px rgba(255, 255, 255, 0.2)',
+            backgroundColor: 'rgba(80, 15, 15, 0.2)',
+            borderRadius: '20px',
         },
         playerBoard: {
             display: 'grid',
@@ -188,16 +195,15 @@ function Game() {
         }
     }
 
-    function Factory({ tiles, factoryIndex}) {
+    function Factory({ tiles, factoryIndex }) {
         const flatTiles = flattenTiles(tiles);
         const moveContext = getMove();
 
         return (
-            <div style={{...styles.gridCenterStyle}}>
+            <div style={{ ...styles.gridCenterStyle }}>
                 {flatTiles.map((color, index) => (
                     <PatternSquare
                         key={index}
-                        border='1px solid black'
                         backgroundColor={convertColor(color)}
                         onClick={() => moveContext.selectTile(factoryIndex, color)}
                     />
@@ -210,7 +216,8 @@ function Game() {
         return (
             <div style={styles.factoryRow}>
                 {factories.map((factory, index) => (
-                    <div key={index}>
+                    <div style={{
+                        ...styles.darkBoardWraper, padding:'6px', borderRadius:'0.8vw'}} key={index}>
                         <Factory tiles={factory.tiles} factoryIndex={index} />
                     </div>
                 ))}
@@ -219,7 +226,7 @@ function Game() {
     }
 
 
-    function PatternSquare({ border, backgroundColor, text, opacity, onClick}) {
+    function PatternSquare({ border, backgroundColor, text, opacity, onClick }) {
         if (!backgroundColor) {
             return <div style={{ ...styles.tileSquare, border, opacity }} onClick={onClick}>{text}</div>;
         }
@@ -254,12 +261,12 @@ function Game() {
                     const currentPatternLine = getPatternLineFill({ index: rowIndex, patternData: patternData });
 
                     if (colIndex < 4 - rowIndex) {
-                        return <PatternSquare key={index} border='1px solid white' onClick={() => moveContext.selectRow(rowIndex)} />;
+                        return <PatternSquare key={index} onClick={() => moveContext.selectRow(rowIndex)} />;
                     } else {
                         if (currentPatternLine && 4 - colIndex < currentPatternLine.tiles) {
                             return <PatternSquare key={index} border='1px solid black' backgroundColor={currentPatternLine.color} onClick={() => moveContext.selectRow(rowIndex)} />;
                         }
-                        return <PatternSquare key={index} border='1px solid black' backgroundColor='Null' onClick={() => moveContext.selectRow(rowIndex)} />;
+                        return <PatternSquare key={index} backgroundColor='Null' onClick={() => moveContext.selectRow(rowIndex)} />;
                     }
                 })}
             </div>
@@ -298,7 +305,7 @@ function Game() {
         return (
             <div style={{ ...styles.floorLine }}>
                 {Array.from({ length: 7 }).map((_, colIndex) => (
-                    <PatternSquare key={colIndex} border='1px solid black' backgroundColor={colIndex < floorLineProgress ? 'Grey' : 'Null'} onClick={() => moveContext.selectRow(5)} />
+                    <PatternSquare key={colIndex} border='1px solid black' backgroundColor={colIndex < floorLineProgress ? 'Black' : 'Null'} onClick={() => moveContext.selectRow(5)} />
                 ))}
             </div>
         );
@@ -369,9 +376,12 @@ function Game() {
     function PlayerBoard({ playerData, playerNumber, currentPlayer }) {
         return (
             <div style={{
-                ...styles.playerBoardWrapper,
-                border: playerNumber === currentPlayer ? '2px solid red' : '2px solid black'
+                ...styles.darkBoardWraper,
+                border: playerNumber === currentPlayer ? '2px light red' : '2px light black',
             }}>
+                <h2 style={{ color: playerNumber === currentPlayer ? 'white' : 'lightgrey' }}>
+                    {'Spieler ' + (playerNumber + 1)}
+                </h2>
                 <ScoreBoard score={playerData.score} />
                 <div style={styles.gameComponents}>
                     <Pattern playerNumber={playerNumber} patternData={playerData.pattern} />
@@ -398,12 +408,12 @@ function Game() {
 
             {(gameStatus === "running") && (
                 <MoveContext.Provider value={moveContext}>
-                    <h1>{"Spieler " + board.current_player + " ist am Zug"}</h1>
+                    <h1 style={{color: 'white', ...styles.darkBoardWraper, padding:'10px', borderRadius:'5px'}}>{"Spieler " +  (board.current_player+1) + " ist am Zug"}</h1>
                     <div style={styles.board}>
                         <div className="board-row" style={styles.factoryRow}>
                             <Factories factories={board.factories} />
                         </div>
-                        <div className="board-row" style={styles.boardRow}>
+                        <div style={styles.boardRow}>
                             {Array.from({ length: board.players.length }).map((_, index) => (
                                 <PlayerBoard key={index} playerData={board.players[index]} playerNumber={index} currentPlayer={board.current_player} />
                             ))}

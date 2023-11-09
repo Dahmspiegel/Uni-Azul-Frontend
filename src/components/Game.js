@@ -7,8 +7,8 @@ import { gameData } from './GameData';
 
 function Game() {
 
-    // const [gameStatus, setGameStatus] = useState('not_found');
-    const [gameStatus, setGameStatus] = useState('running');
+    const [gameStatus, setGameStatus] = useState('not_found');
+    // const [gameStatus, setGameStatus] = useState('running');
     const collorPalett = ['Blau', 'Grün', 'Rot', 'Lila', 'Weiß']
 
     const { gameId } = useParams();
@@ -19,11 +19,12 @@ function Game() {
         }
     }, [gameId]);
 
-    const [board, setBoard] = useState(gameData.data);
-    // const [board, setBoard] = useState();
+    // const [board, setBoard] = useState(gameData.data);
+    const [board, setBoard] = useState();
     const [posMoves, setPosMoves] = useState([]);
     const [requestID, setReqestId] = useState([]);
     const [showMoves, setShowMoves] = useState([]);
+    const [movePlayerNumber, setMovePlayerNumber] = useState(0);
     const [myPattern, setMyPattern] = useState();
 
     const webSocket = getWebSocket();
@@ -45,6 +46,7 @@ function Game() {
                 setPosMoves(message.data.move_list);
                 setShowMoves(message.data.move_list);
                 setReqestId(message.data.request_id);
+                setMovePlayerNumber(message.data.game_state.current_player);
             }
         }
     }, [webSocket.lastJsonMessage]);
@@ -66,8 +68,13 @@ function Game() {
             setShowMoves(posMoves.filter(move => move.take_from_factory_index === factoryId && move.color === color));
             setMyPattern([0, 0, 0, 0, 0, 0]);
         },
-        selectRow: (rowIndex) => {
+        selectRow: (rowIndex, playerNumber) => {
+            const newPlayerNumber = playerNumber
             if (showMoves.length === 0) return;
+            console.log('current PlayerNum: ' + playerNumber)
+            console.log('current NewPlayerNum: ' + newPlayerNumber)
+            console.log('shoud PlayerNum: ' + movePlayerNumber)
+            if (newPlayerNumber !== movePlayerNumber) return;
             const newPattern = [...myPattern];
             newPattern[rowIndex] = myPattern[rowIndex] + 1;
 
@@ -254,6 +261,7 @@ function Game() {
 
     function Pattern({ playerNumber, patternData }) {
         return (
+            console.log(playerNumber),
             <div className="grid">
                 {Array.from({ length: 25 }).map((_, index) => {
                     const rowIndex = Math.floor(index / 5);
@@ -261,12 +269,12 @@ function Game() {
                     const currentPatternLine = getPatternLineFill({ index: rowIndex, patternData: patternData });
 
                     if (colIndex < 4 - rowIndex) {
-                        return <PatternSquare key={index} onClick={() => moveContext.selectRow(rowIndex)} />;
+                        return <PatternSquare key={index} />;
                     } else {
                         if (currentPatternLine && 4 - colIndex < currentPatternLine.tiles) {
-                            return <PatternSquare key={index} border='1px solid black' backgroundColor={currentPatternLine.color} onClick={() => moveContext.selectRow(rowIndex)} />;
+                            return <PatternSquare key={index} border='1px solid black' backgroundColor={currentPatternLine.color} onClick={() => moveContext.selectRow(rowIndex, playerNumber)} />;
                         }
-                        return <PatternSquare key={index} backgroundColor='Null' onClick={() => moveContext.selectRow(rowIndex)} />;
+                        return <PatternSquare key={index} backgroundColor='Null' onClick={() => moveContext.selectRow(rowIndex, playerNumber)} />;
                     }
                 })}
             </div>
@@ -301,11 +309,11 @@ function Game() {
     }
 
 
-    function FloorLine({ floorLineProgress }) {
+    function FloorLine({ floorLineProgress, playerNumber }) {
         return (
             <div style={{ ...styles.floorLine }}>
                 {Array.from({ length: 7 }).map((_, colIndex) => (
-                    <PatternSquare key={colIndex} border='1px solid black' backgroundColor={colIndex < floorLineProgress ? 'Black' : 'Null'} onClick={() => moveContext.selectRow(5)} />
+                    <PatternSquare key={colIndex} backgroundColor={colIndex < floorLineProgress ? 'Black' : 'Null'} onClick={() => moveContext.selectRow(5, playerNumber)} />
                 ))}
             </div>
         );
@@ -388,7 +396,7 @@ function Game() {
                     <div style={{ width: '5vw' }}></div>
                     <Wall playerNumber={playerNumber} wallData={playerData.wall} />
                 </div>
-                <FloorLine floorLineProgress={playerData.floor_line_progress} />
+                <FloorLine floorLineProgress={playerData.floor_line_progress} playerNumber={playerNumber} />
             </div>
         );
     }

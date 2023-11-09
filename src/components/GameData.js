@@ -163,7 +163,7 @@ export const gameData = {
         "next_round_starting_player": null,
         "players": [
             {
-                "floor_line_penalty": 0,
+                "floor_line_penalty": 10,
                 "floor_line_progress": 1,
                 "pattern": [
                     {

@@ -7,8 +7,8 @@ import { gameData } from './GameData';
 
 function Game() {
 
-    // const [gameStatus, setGameStatus] = useState('not_found');
-    const [gameStatus, setGameStatus] = useState('running');
+    const [gameStatus, setGameStatus] = useState('not_found');
+    // const [gameStatus, setGameStatus] = useState('running');
     const collorPalett = ['Blau', 'Grün', 'Rot', 'Lila', 'Weiß']
 
     const { gameId } = useParams();
@@ -19,8 +19,8 @@ function Game() {
         }
     }, [gameId]);
 
-    const [board, setBoard] = useState(gameData.data);
-    // const [board, setBoard] = useState();
+    // const [board, setBoard] = useState(gameData.data);
+    const [board, setBoard] = useState();
     const [posMoves, setPosMoves] = useState([]);
     const [requestID, setReqestId] = useState([]);
     const [showMoves, setShowMoves] = useState([]);
@@ -146,11 +146,20 @@ function Game() {
             marginTop: '1vw',
             minWidth: '100px'
         },
+        missingTile: {
+            display: 'inline-block',
+            boxShadow: 'inset 2px 2px 2px rgba(0, 0, 0, 0.3), inset -2px -2px 2px rgba(255, 255, 255, 0.05)',
+            backgroundColor: 'rgba(80, 15, 15, 0.35)',
+            borderRadius: '3px',
+            alignItems: 'center',
+            justifyContent: 'center',
+            display: 'flex',
+        },
         darkBoardWraper: {
             padding: '10px',
             marginBottom: '10px',
             display: 'inline-block',
-            boxShadow: 'inset 10px 10px 10px rgba(0, 0, 0, 0.3), inset -10px -10px 20px rgba(255, 255, 255, 0.25)',
+            boxShadow: 'inset 10px 10px 10px rgba(0, 0, 0, 0.3), inset -10px -10px 15px rgba(255, 255, 255, 0.15)',
             backgroundColor: 'rgba(80, 15, 15, 0.2)',
             borderRadius: '20px',
             alignItems: 'center',
@@ -175,7 +184,7 @@ function Game() {
         }
     };
 
-    function flattenTiles(tiles) {
+    function flattenTiles({tiles, isCenter}) {
         const result = [];
         tiles.forEach(tile => {
             for (let i = 0; i < tile.number_of_tiles; i++) {
@@ -183,7 +192,7 @@ function Game() {
             }
         });
 
-        if (result.length === 0) {
+        if (result.length === 0 && !isCenter) {
             for (let i = 0; i < 4; i++) {
                 result.push("white");
             }
@@ -198,12 +207,12 @@ function Game() {
             case 'R': return 'Rot';
             case 'K': return 'Lila';
             case 'W': return 'Weiß';
-            default: return 'Null';
+            default: return 'Empty';
         }
     }
 
-    function Factory({ tiles, factoryIndex }) {
-        const flatTiles = flattenTiles(tiles);
+    function Factory({ tiles, factoryIndex, isCenter }) {
+        const flatTiles = flattenTiles({tiles, isCenter});
         const moveContext = getMove();
 
         return (
@@ -226,7 +235,7 @@ function Game() {
                     <div style={{
                         ...styles.darkBoardWraper, padding: '6px', borderRadius: '0.8vw'
                     }} key={index}>
-                        <Factory tiles={factory.tiles} factoryIndex={index} />
+                        <Factory tiles={factory.tiles} factoryIndex={index} isCenter={factory.is_center} />
                     </div>
                 ))}
             </div>
@@ -236,8 +245,13 @@ function Game() {
 
     function PatternSquare({ border, backgroundColor, text, opacity, onClick }) {
         if (!backgroundColor) {
-            return <div style={{ ...styles.tileSquare, border, opacity }} onClick={onClick}>{text}</div>;
+            return <div style={{ ...styles.tileSquare, border }} onClick={onClick}>{text}</div>;
         }
+        
+        if (backgroundColor === 'Empty') {
+            return <div style={{ ...styles.tileSquare, border, ...styles.missingTile }} onClick={onClick}>{text}</div>;
+        }
+
         const imageSrc = images(`./Azul_Kachel_${backgroundColor}.png`);
 
         if (backgroundColor === 'Num') {
@@ -285,7 +299,7 @@ function Game() {
                         if (currentPatternLine && 4 - colIndex < currentPatternLine.tiles) {
                             return <PatternSquare key={index} border='1px solid black' backgroundColor={currentPatternLine.color} onClick={() => moveContext.selectRow(rowIndex, playerNumber)} />;
                         }
-                        return <PatternSquare key={index} backgroundColor='Null' onClick={() => moveContext.selectRow(rowIndex, playerNumber)} />;
+                        return <PatternSquare key={index} backgroundColor='Empty' onClick={() => moveContext.selectRow(rowIndex, playerNumber)} />;
                     }
                 })}
             </div>
@@ -332,12 +346,12 @@ function Game() {
     }
 
     function ScoreBoardSquare(props) {
-        const { color, number, filter } = props;
+        const { color, number, filter} = props;
 
         let backgroundImage = images(`./Azul_Kachel_Num.png`);
 
         return (
-            <div style={{ ...styles.scoreSquare, fontSize: '12px', position: 'relative', color: color }}>
+            <div style={{ ...styles.scoreSquare, fontSize: '12px', position: 'relative', color: color, border: `1px solid ${color}` }}>
                 <img src={backgroundImage} style={{ width: '100%', height: '100%', filter: filter }} />
                 <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                     {number}
@@ -349,6 +363,7 @@ function Game() {
 
     function ScoreBoard({ score }) {
         let scoreColor = "blue";
+        let outline = "1px solid blue";
         if (score === undefined) score = 0;
         else if (score < 0) {
             score = 100 + score;

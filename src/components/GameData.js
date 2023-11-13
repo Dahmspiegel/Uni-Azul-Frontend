@@ -143,7 +143,7 @@ export const gameData = {
                     },
                     {
                         "color": "Y",
-                        "number_of_tiles": 5
+                        "number_of_tiles": 0
                     },
                     {
                         "color": "R",
@@ -151,11 +151,11 @@ export const gameData = {
                     },
                     {
                         "color": "K",
-                        "number_of_tiles": 7
+                        "number_of_tiles": 0
                     },
                     {
                         "color": "W",
-                        "number_of_tiles": 0
+                        "number_of_tiles": 10
                     }
                 ]
             }

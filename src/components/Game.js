@@ -21,6 +21,9 @@ function Game() {
 
     // const [board, setBoard] = useState(gameData.data);
     const [board, setBoard] = useState();
+    const [boardQueue, setBoardQueue] = useState([]);
+    const [currentIndex, setCurrentIndex] = useState(0);
+    const [isTimerActive, setIsTimerActive] = useState(true);
     const [posMoves, setPosMoves] = useState([]);
     const [requestID, setReqestId] = useState([]);
     const [showMoves, setShowMoves] = useState([]);
@@ -28,6 +31,39 @@ function Game() {
     const [myPattern, setMyPattern] = useState();
 
     const webSocket = getWebSocket();
+
+    useEffect(() => {
+        let timerId;
+        if (isTimerActive) {
+            timerId = setInterval(() => {
+                if (currentIndex < boardQueue.length) {
+                    // setBoard(boardQueue[currentIndex]);
+                    setCurrentIndex(prevIndex => Math.min(boardQueue.length - 1, prevIndex + 1));
+                }
+            }, 500);
+        }
+
+        return () => {
+            if (timerId) clearInterval(timerId);
+        };
+    }, [currentIndex, boardQueue.length, isTimerActive]);
+
+    useEffect(() => {
+        setBoard(boardQueue[currentIndex]);
+    }, [currentIndex]);
+
+    const undoMove = () => {
+        setCurrentIndex(prevIndex => Math.max(0, prevIndex - 1));
+    };
+
+    const redoMove = () => {
+        setCurrentIndex(prevIndex => Math.min(boardQueue.length - 1, prevIndex + 1));
+    };
+
+    // Toggle für den Timer
+    const toggleTimer = () => {
+        setIsTimerActive(!isTimerActive);
+    };
 
     useEffect(() => {
         if (webSocket.lastJsonMessage) {
@@ -39,10 +75,25 @@ function Game() {
 
             if (message.event === 'game_state_update') {
                 if (gameStatus !== 'running') setGameStatus('running');
-                setBoard(message.data);
+
+                if (boardQueue.length === 0) {
+                    setBoard(message.data);
+                    setBoardQueue(boardQueue => [...boardQueue, message.data]);
+                }
+                else if (boardQueue[-1] === message.data) {
+                    console.log('same board');
+                    console.log(boardQueue[-1]);
+                    console.log(message.data);
+                    console.log('same board end')
+                    return;
+                }
+                setBoardQueue(boardQueue => [...boardQueue, message.data]);
+
+
+                // setBoard(message.data);
             }
             else if (message.event === 'move_request') {
-                console.log(message.data);
+                // console.log(message.data);
                 setPosMoves(message.data.move_list);
                 setShowMoves(message.data.move_list);
                 setReqestId(message.data.request_id);
@@ -417,7 +468,7 @@ function Game() {
                 border: playerNumber === currentPlayer ? '2px light red' : '2px light black',
             }}>
                 <div>
-                    <h2 style={{ color: playerNumber === currentPlayer ? 'white' : 'lightgrey' }}>
+                    <h2 style={{ color: playerNumber === currentPlayer ? 'white' : 'black' }}>
                         {'Spieler ' + (playerNumber + 1)}
                     </h2>
                     <ScoreBoard score={playerData.score} />
@@ -445,9 +496,18 @@ function Game() {
                 </div>
             )}
 
-            {(gameStatus === "running") && (
+            {(gameStatus === "running") && board && (
                 <MoveContext.Provider value={moveContext}>
-                    <h1 style={{ color: 'white', ...styles.darkBoardWraper, padding: '10px', borderRadius: '5px', }}>{"Spieler " + (board.current_player + 1) + " ist am Zug"}</h1>
+                    <h1 style={{ color: 'white', ...styles.darkBoardWraper, padding: '10px', borderRadius: '5px', }}>
+                        {"Spieler " + (board.current_player + 1) + " ist am Zug"}
+                    </h1>
+                    <div>
+                        <button onClick={undoMove}>Undo</button>
+                        <button onClick={redoMove}>Redo</button>
+                        <button onClick={toggleTimer}>
+                            {isTimerActive ? 'Pause Timer' : 'Start Timer'}
+                        </button>
+                    </div>
                     <div style={styles.board}>
                         <div className="board-row" style={styles.factoryRow}>
                             <Factories factories={board.factories} />
@@ -460,6 +520,7 @@ function Game() {
                     </div>
                 </MoveContext.Provider>
             )}
+
         </>
     );
 }

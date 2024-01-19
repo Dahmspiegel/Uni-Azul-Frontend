@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from "react";
 import ReactDOM from 'react-dom';
 import WebSocketComponent from './WebSocketComponent';
-import { PlayerDataProvider } from './context/playerDataContext';
+import { PlayerSettingsProvider } from './context/playerSettingsContext';
 import useWebSocket from "react-use-websocket";
 import { BrowserRouter as Router, Route, Routes, Link } from 'react-router-dom';
 import Home from './components/Home';
 import Game from './components/Game';
+import Temp from './components/temp';
 import { WebSocketContext } from "./webSocketContext";
 import backgroundImage from './images/Backround.png';
 
@@ -44,13 +45,14 @@ export default function App() {
           </ul>
         </nav>
         <WebSocketContext.Provider value={webSocket}>
-          <PlayerDataProvider>
+          <PlayerSettingsProvider>
             <Routes>
               <Route path="/" exact element={<Home />} />
-              <Route path="/game/:gameId" Component={Game} />
+              <Route path="/game/:gameId" Component={Temp} />
+              <Route path="/temp" Component={Temp} />
               {/* <Route path="/game" Component={Game} /> */}
             </Routes>
-          </PlayerDataProvider>
+          </PlayerSettingsProvider>
         </WebSocketContext.Provider>
       </div>
     </Router>

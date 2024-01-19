@@ -4,6 +4,8 @@ import { getWebSocket } from '../webSocketContext';
 import { MoveContext, getMove } from '../MoveContext';
 const images = require.context('../images/', false, /\.png$/);
 import { gameData } from './GameData';
+import { usePlayerSettings } from '../context/playerSettingsContext';
+
 
 function Game() {
 
@@ -29,7 +31,7 @@ function Game() {
     const [showMoves, setShowMoves] = useState([]);
     const [movePlayerNumber, setMovePlayerNumber] = useState(0);
     const [myPattern, setMyPattern] = useState();
-
+    const { playerSettings } = usePlayerSettings();
     const webSocket = getWebSocket();
 
     useEffect(() => {
@@ -144,10 +146,6 @@ function Game() {
     function arraysAreEqual(arr1, arr2) {
         return arr1.length === arr2.length && arr1.every((value, index) => value === arr2[index]);
     }
-
-    // useEffect(() => {
-    //     console.log("showMoves:", showMoves);
-    // }, [showMoves]);
 
     const styles = {
         scoreSquare: {
@@ -453,6 +451,12 @@ function Game() {
 
 
     function PlayerBoard({ playerData, playerNumber, currentPlayer }) {
+        // console.log('Player Data Read: ', playerSettings);
+
+        const playerName = playerSettings.players && playerSettings.players[playerNumber]
+            ? playerSettings.players[playerNumber].name
+            : `undefined name`;
+
         return (
             <div style={{
                 ...styles.darkBoardWraper,
@@ -460,7 +464,7 @@ function Game() {
             }}>
                 <div>
                     <h2 style={{ color: playerNumber === currentPlayer ? 'white' : 'black' }}>
-                        {'Spieler ' + (playerNumber + 1)}
+                        {playerName}
                     </h2>
                     <ScoreBoard score={playerData.score} />
                     <div style={styles.gameComponents}>
@@ -490,7 +494,7 @@ function Game() {
             {(gameStatus === "running") && board && (
                 <MoveContext.Provider value={moveContext}>
                     <h1 style={{ color: 'white', ...styles.darkBoardWraper, padding: '10px', borderRadius: '5px', }}>
-                        {"Spieler " + (board.current_player + 1) + " ist am Zug"}
+                        {playerSettings.players[board.current_player].name + " ist am Zug"}
                     </h1>
                     <div>
                         <button onClick={undoMove}>Undo</button>

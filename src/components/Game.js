@@ -46,7 +46,7 @@ function Game() {
         return () => {
             if (timerId) clearInterval(timerId);
         };
-    }, [currentIndex, boardQueue.length, isTimerActive]);
+    }, [boardQueue.length, isTimerActive]);
 
     useEffect(() => {
         setBoard(boardQueue[currentIndex]);
@@ -60,7 +60,6 @@ function Game() {
         setCurrentIndex(prevIndex => Math.min(boardQueue.length - 1, prevIndex + 1));
     };
 
-    // Toggle für den Timer
     const toggleTimer = () => {
         setIsTimerActive(!isTimerActive);
     };
@@ -78,14 +77,6 @@ function Game() {
 
                 if (boardQueue.length === 0) {
                     setBoard(message.data);
-                    setBoardQueue(boardQueue => [...boardQueue, message.data]);
-                }
-                else if (boardQueue[-1] === message.data) {
-                    console.log('same board');
-                    console.log(boardQueue[-1]);
-                    console.log(message.data);
-                    console.log('same board end')
-                    return;
                 }
                 setBoardQueue(boardQueue => [...boardQueue, message.data]);
 

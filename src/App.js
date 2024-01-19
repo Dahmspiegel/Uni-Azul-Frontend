@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
 import ReactDOM from 'react-dom';
 import WebSocketComponent from './WebSocketComponent';
+import { PlayerDataProvider } from './context/playerDataContext';
 import useWebSocket from "react-use-websocket";
 import { BrowserRouter as Router, Route, Routes, Link } from 'react-router-dom';
 import Home from './components/Home';
-import Game from './components/Game'; // Ich nehme an, dass Sie hier einen kleinen Fehler gemacht haben und "Game" wirklich die "About"-Seite ist.
+import Game from './components/Game';
 import { WebSocketContext } from "./webSocketContext";
 import backgroundImage from './images/Backround.png';
 
@@ -33,8 +34,6 @@ export default function App() {
   }
     , [webSocket.lastJsonMessage]);
 
-
-
   return (
     <Router>
       <div style={appStyle}>
@@ -45,11 +44,13 @@ export default function App() {
           </ul>
         </nav>
         <WebSocketContext.Provider value={webSocket}>
-          <Routes>
-            <Route path="/" exact element={<Home />} />
-            <Route path="/game/:gameId" Component={Game} />
-            {/* <Route path="/game" Component={Game} /> */}
-          </Routes>
+          <PlayerDataProvider>
+            <Routes>
+              <Route path="/" exact element={<Home />} />
+              <Route path="/game/:gameId" Component={Game} />
+              {/* <Route path="/game" Component={Game} /> */}
+            </Routes>
+          </PlayerDataProvider>
         </WebSocketContext.Provider>
       </div>
     </Router>

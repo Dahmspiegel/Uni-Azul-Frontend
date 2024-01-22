@@ -48,7 +48,7 @@ export default function App() {
           <PlayerSettingsProvider>
             <Routes>
               <Route path="/" exact element={<Home />} />
-              <Route path="/game/:gameId" Component={Temp} />
+              <Route path="/game/:gameId" Component={Game} />
               <Route path="/temp" Component={Temp} />
               {/* <Route path="/game" Component={Game} /> */}
             </Routes>

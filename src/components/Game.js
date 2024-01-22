@@ -11,7 +11,6 @@ function Game() {
 
     const [gameStatus, setGameStatus] = useState('not_found');
     // const [gameStatus, setGameStatus] = useState('running');
-    const collorPalett = ['Blau', 'Grün', 'Rot', 'Lila', 'Weiß']
 
     const { gameId } = useParams();
 
@@ -33,6 +32,7 @@ function Game() {
     const [myPattern, setMyPattern] = useState();
     const { playerSettings } = usePlayerSettings();
     const webSocket = getWebSocket();
+    const collorPalett = ['Blau', 'Grün', 'Rot', 'Lila', 'Weiß'];
 
     useEffect(() => {
         let timerId;
@@ -142,6 +142,105 @@ function Game() {
         }
 
     };
+
+    function Scoreboard() {
+        console.log('playerSettings: ', playerSettings);
+        const fields = Array.from({ length: 101 }, () => []);
+
+        console.log(board);
+        for (let i = 0; i < board.players.length; i++) {
+            console.log('fiels: ', fields)
+            const player = board.players[i];
+            if (player.score >= 0 && player.score <= 100) {
+                const imagePath = `./Azul_Kachel_${playerSettings.players[i].color}.png`;
+                fields[player.score].push({
+                    image: images(imagePath),
+                });
+            }
+        }
+
+        const firstRow = [fields[0]];
+        const otherRows = [];
+        for (let i = 1; i < fields.length; i += 20) {
+            otherRows.push(fields.slice(i, i + 20));
+        }
+
+        return (
+            <div>
+                <div style={{ display: 'flex', flexDirection: 'row' }}>
+                    {firstRow.map((field, index) => (
+                        <ScoreField key={index} field={field} />
+                    ))}
+                </div>
+                {otherRows.map((row, rowIndex) => (
+                    <div key={rowIndex} style={{ display: 'flex', flexDirection: 'row' }}>
+                        {row.map((field, fieldIndex) => (
+                            <ScoreField key={fieldIndex} field={field} />
+                        ))}
+                    </div>
+                ))}
+            </div>
+        );
+    }
+
+    function ScoreField({ field }) {
+        const style = {
+            width: '4vw',
+            height: '4vw',
+            border: '1px solid black',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            position: 'relative',
+            backgroundImage: `url(${images('./Azul_Kachel_Num.png')})`,
+            backgroundSize: 'cover'
+        };
+
+        const getImageStyle = (index) => {
+            if (field.length == 1) {
+                return {
+                    width: `${100 / 1.5}%`,
+                    height: `${100 / 1.5}%`,
+                    position: 'absolute',
+                };
+            } else if (field.length == 2) {
+                return {
+                    width: `${100 / field.length}%`,
+                    height: `${100 / field.length}%`,
+                    position: 'absolute',
+                    left: `${(100 / field.length) * index}%`
+                };
+            } else {
+                const positions = [
+                    { left: '0%', top: '0%' },
+                    { left: '50%', top: '0%' },
+                    { left: '0%', top: '50%' },
+                    { left: '50%', top: '50%' }
+                ];
+                const position = positions[index % 4];
+                return {
+                    width: '50%',
+                    height: '50%',
+                    position: 'absolute',
+                    left: position.left,
+                    top: position.top
+                };
+            }
+        };
+
+        return (
+            <div style={style}>
+                {field.map((player, idx) => (
+                    <img
+                        key={idx}
+                        src={player.image}
+                        alt={player.name}
+                        style={getImageStyle(idx)}
+                    />
+                ))}
+            </div>
+        );
+    }
 
     function arraysAreEqual(arr1, arr2) {
         return arr1.length === arr2.length && arr1.every((value, index) => value === arr2[index]);
@@ -385,69 +484,6 @@ function Game() {
         );
     }
 
-    function ScoreBoardSquare(props) {
-        const { color, number, filter} = props;
-
-        let backgroundImage = images(`./Azul_Kachel_Num.png`);
-
-        return (
-            <div style={{ ...styles.scoreSquare, fontSize: '12px', position: 'relative', color: color, border: `1px solid ${color}` }}>
-                <img src={backgroundImage} style={{ width: '100%', height: '100%', filter: filter }} />
-                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                    {number}
-                </div>
-            </div>
-        );
-    }
-
-
-    function ScoreBoard({ score }) {
-        let scoreColor = "blue";
-        let outline = "1px solid blue";
-        if (score === undefined) score = 0;
-        else if (score < 0) {
-            score = 100 + score;
-            scoreColor = "red";
-        }
-        else if (score > 100) {
-            score = score % 100;
-            scoreColor = "green";
-        }
-        const scoreRows = [];
-        let currentNumber = 0;
-
-        scoreRows.push(
-            <div className="board-row" key={0}>
-                <ScoreBoardSquare
-                    key={currentNumber}
-                    number={currentNumber}
-                    color={currentNumber === score ? scoreColor : "black"}
-                    filter={currentNumber === score ? "none" : 'grayscale(80%)'}
-                />
-            </div>
-        );
-
-        for (let i = 1; i <= 100; i += 20) {
-            scoreRows.push(
-                <div className="board-row" key={i}>
-                    {Array.from({ length: 20 }).map((_, j) => {
-                        currentNumber = j + i;
-                        return (
-                            <ScoreBoardSquare
-                                key={currentNumber}
-                                number={currentNumber}
-                                color={currentNumber === score ? scoreColor : "black"}
-                                filter={currentNumber === score ? "none" : 'grayscale(80%)'}
-                            />
-                        );
-                    })}
-                </div>
-            );
-        }
-
-        return scoreRows;
-    }
-
 
 
     function PlayerBoard({ playerData, playerNumber, currentPlayer }) {
@@ -466,7 +502,6 @@ function Game() {
                     <h2 style={{ color: playerNumber === currentPlayer ? 'white' : 'black' }}>
                         {playerName}
                     </h2>
-                    <ScoreBoard score={playerData.score} />
                     <div style={styles.gameComponents}>
                         <Pattern playerNumber={playerNumber} patternData={playerData.pattern} />
                         <div style={{ width: '5vw' }}></div>
@@ -493,6 +528,7 @@ function Game() {
 
             {(gameStatus === "running") && board && (
                 <MoveContext.Provider value={moveContext}>
+                    <Scoreboard />
                     <h1 style={{ color: 'white', ...styles.darkBoardWraper, padding: '10px', borderRadius: '5px', }}>
                         {playerSettings.players[board.current_player].name + " ist am Zug"}
                     </h1>

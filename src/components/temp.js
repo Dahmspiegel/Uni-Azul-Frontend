@@ -117,7 +117,6 @@ function Temp() {
     return (
         <>
             <Scoreboard />
-            {/* <ScoreBoard score={playerSettings.score} /> */}
         </>
     );
 }

@@ -2,15 +2,15 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
 import { getWebSocket } from '../webSocketContext';
-import { usePlayerData } from '../context/playerDataContext';
+import { usePlayerSettings } from '../context/playerSettingsContext';
 
 function Home() {
     const [showDropdown, setShowDropdown] = useState(false);
     const [selectedNumber, setSelectedNumber] = useState(null);
     const [playerTypes, setPlayerTypes] = useState([]);
     const navigate = useNavigate();
-    const { updatePlayerData } = usePlayerData();
-    const allColors = ['Blau', 'Grün', 'Rot', 'Lila', 'Weiß'];
+    const { updatePlayerSettings } = usePlayerSettings();
+    const allColors = ['Blue', 'Green', 'Red', 'Purple', 'White'];
     const webSocket = getWebSocket();
 
     const handleNewGameClick = () => {
@@ -60,7 +60,7 @@ const handleNumberClick = (number) => {
             }
         };
 
-        updatePlayerData({players: playerTypes});
+        updatePlayerSettings({players: playerTypes});
 
         webSocket.sendJsonMessage(gameData);
     };

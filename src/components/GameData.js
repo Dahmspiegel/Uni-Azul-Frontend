@@ -187,7 +187,7 @@ export const gameData = {
                         "patern_line_index": 4
                     }
                 ],
-                "score": 0,
+                "score": 4,
                 "wall": [
                     {
                         "col": 0,
@@ -236,7 +236,91 @@ export const gameData = {
                         "patern_line_index": 4
                     }
                 ],
-                "score": 101,
+                "score": 5,
+                "wall": [
+                    {
+                        "col": 0,
+                        "color": "B",
+                        "row": 0
+                    },
+                    {
+                        "col": 1,
+                        "color": "Y",
+                        "row": 0
+                    },
+                    {
+                        "col": 2,
+                        "color": "R",
+                        "row": 0
+                    },
+                    {
+                        "col": 3,
+                        "color": "K",
+                        "row": 0
+                    },
+                    {
+                        "col": 1,
+                        "color": "B",
+                        "row": 1
+                    },
+                    {
+                        "col": 2,
+                        "color": "Y",
+                        "row": 1
+                    },
+                    {
+                        "col": 3,
+                        "color": "R",
+                        "row": 1
+                    },
+                    {
+                        "col": 4,
+                        "color": "K",
+                        "row": 1
+                    },
+                    {
+                        "col": 2,
+                        "color": "B",
+                        "row": 2
+                    },
+                    {
+                        "col": 3,
+                        "color": "Y",
+                        "row": 2
+                    },
+                    {
+                        "col": 0,
+                        "color": "R",
+                        "row": 3
+                    },
+                    {
+                        "col": 3,
+                        "color": "B",
+                        "row": 3
+                    },
+                    {
+                        "col": 4,
+                        "color": "Y",
+                        "row": 3
+                    },
+                    {
+                        "col": 4,
+                        "color": "B",
+                        "row": 4
+                    }
+                ]
+            },
+            {
+                "floor_line_penalty": 4,
+                "floor_line_progress": 3,
+                "pattern": [
+                    {
+                        "color": "Y",
+                        "number_of_tiles": 1,
+                        "patern_line_index": 4
+                    }
+                ],
+                "score": 5,
                 "wall": [
                     {
                         "col": 0,

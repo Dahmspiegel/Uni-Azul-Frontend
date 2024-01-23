@@ -6,18 +6,15 @@ import useWebSocket from "react-use-websocket";
 import { BrowserRouter as Router, Route, Routes, Link } from 'react-router-dom';
 import Home from './components/Home';
 import Game from './components/Game';
-import Temp from './components/temp';
 import { WebSocketContext } from "./webSocketContext";
-import backgroundImage from './images/Backround.png';
 
 const socketURL = "ws://localhost:3001";
 const appStyle = {
-  backgroundImage: `url(${backgroundImage})`,
   backgroundSize: 'cover',
   padding: '10px',
   backgroundRepeat: 'no-repeat',
   minHeight: '100vh',
-  width: '100%',
+  width: '100%'
 };
 
 export default function App() {
@@ -48,9 +45,7 @@ export default function App() {
           <PlayerSettingsProvider>
             <Routes>
               <Route path="/" exact element={<Home />} />
-              <Route path="/game/:gameId" Component={Game} />
-              <Route path="/temp" Component={Temp} />
-              {/* <Route path="/game" Component={Game} /> */}
+              <Route path="/game/:gameId" element={<Game />} />
             </Routes>
           </PlayerSettingsProvider>
         </WebSocketContext.Provider>

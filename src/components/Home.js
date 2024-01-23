@@ -10,7 +10,7 @@ function Home() {
     const [playerTypes, setPlayerTypes] = useState([]);
     const navigate = useNavigate();
     const { updatePlayerSettings } = usePlayerSettings();
-    const allColors = ['Blau', 'Grün', 'Rot', 'Lila', 'Weiß'];
+    const allColors = ['Blue', 'Green', 'Red', 'Purple', 'White'];
     const webSocket = getWebSocket();
 
     const handleNewGameClick = () => {

@@ -23,8 +23,8 @@ function Game() {
     // const [board, setBoard] = useState(gameData.data);
     const [board, setBoard] = useState();
     const [boardQueue, setBoardQueue] = useState([]);
-    const [currentIndex, setCurrentIndex] = useState(0);
-    const [isTimerActive, setIsTimerActive] = useState(true);
+    const [boardQueueCurrentIndex, setboardQueueCurrentIndex] = useState(-1);
+    const [boardQueueActive, setBoardQueueActive] = useState(true);
     const [posMoves, setPosMoves] = useState([]);
     const [requestID, setReqestId] = useState([]);
     const [showMoves, setShowMoves] = useState([]);
@@ -32,38 +32,28 @@ function Game() {
     const [myPattern, setMyPattern] = useState();
     const { playerSettings } = usePlayerSettings();
     const webSocket = getWebSocket();
-    const collorPalett = ['Blau', 'Grün', 'Rot', 'Lila', 'Weiß'];
+    const collorPalett = ['Blue', 'Green', 'Red', 'Purple', 'White'];
 
     useEffect(() => {
-        let timerId;
-        if (isTimerActive) {
-            timerId = setInterval(() => {
-                if (currentIndex < boardQueue.length) {
-                    // setBoard(boardQueue[currentIndex]);
-                    setCurrentIndex(prevIndex => Math.min(boardQueue.length - 1, prevIndex + 1));
-                }
-            }, 500);
-        }
+        setBoard(boardQueue[boardQueueCurrentIndex]);
+    }, [boardQueueCurrentIndex]);
 
-        return () => {
-            if (timerId) clearInterval(timerId);
-        };
-    }, [boardQueue.length, isTimerActive]);
-
-    useEffect(() => {
-        setBoard(boardQueue[currentIndex]);
-    }, [currentIndex]);
-
+    const start = () => {
+        setboardQueueCurrentIndex(0);
+    };
+    const end = () => {
+        setboardQueueCurrentIndex(boardQueue.length - 1);
+    };
     const undoMove = () => {
-        setCurrentIndex(prevIndex => Math.max(0, prevIndex - 1));
+        setboardQueueCurrentIndex(prevIndex => Math.max(0, prevIndex - 1));
     };
 
     const redoMove = () => {
-        setCurrentIndex(prevIndex => Math.min(boardQueue.length - 1, prevIndex + 1));
+        setboardQueueCurrentIndex(prevIndex => Math.min(boardQueue.length - 1, prevIndex + 1));
     };
 
-    const toggleTimer = () => {
-        setIsTimerActive(!isTimerActive);
+    const toggleQueue = () => {
+        setBoardQueueActive(!boardQueueActive);
     };
 
     useEffect(() => {
@@ -81,12 +71,11 @@ function Game() {
                     setBoard(message.data);
                 }
                 setBoardQueue(boardQueue => [...boardQueue, message.data]);
-
-
-                // setBoard(message.data);
+                if (boardQueueActive){
+                    setboardQueueCurrentIndex(prevIndex => prevIndex + 1);
+                }
             }
             else if (message.event === 'move_request') {
-                // console.log(message.data);
                 setPosMoves(message.data.move_list);
                 setShowMoves(message.data.move_list);
                 setReqestId(message.data.request_id);
@@ -144,12 +133,9 @@ function Game() {
     };
 
     function Scoreboard() {
-        console.log('playerSettings: ', playerSettings);
         const fields = Array.from({ length: 101 }, () => []);
 
-        console.log(board);
         for (let i = 0; i < board.players.length; i++) {
-            console.log('fiels: ', fields)
             const player = board.players[i];
             if (player.score >= 0 && player.score <= 100) {
                 const imagePath = `./Azul_Kachel_${playerSettings.players[i].color}.png`;
@@ -161,21 +147,22 @@ function Game() {
 
         const firstRow = [fields[0]];
         const otherRows = [];
-        for (let i = 1; i < fields.length; i += 20) {
-            otherRows.push(fields.slice(i, i + 20));
+        const rowlength = 20;
+        for (let i = 1; i < fields.length; i += rowlength) {
+            otherRows.push(fields.slice(i, i + rowlength));
         }
 
         return (
             <div>
                 <div style={{ display: 'flex', flexDirection: 'row' }}>
                     {firstRow.map((field, index) => (
-                        <ScoreField key={index} field={field} />
+                        <ScoreField key={index} field={field} fieldIndex={0}/>
                     ))}
                 </div>
                 {otherRows.map((row, rowIndex) => (
                     <div key={rowIndex} style={{ display: 'flex', flexDirection: 'row' }}>
                         {row.map((field, fieldIndex) => (
-                            <ScoreField key={fieldIndex} field={field} />
+                            <ScoreField key={fieldIndex} field={field} fieldIndex={(rowIndex) * rowlength + fieldIndex + 1}/>
                         ))}
                     </div>
                 ))}
@@ -183,7 +170,7 @@ function Game() {
         );
     }
 
-    function ScoreField({ field }) {
+    function ScoreField({ field, fieldIndex }) {
         const style = {
             width: '4vw',
             height: '4vw',
@@ -228,8 +215,17 @@ function Game() {
             }
         };
 
+        const getFieldLabelStyle = () => {
+            return {
+                textAlign: 'center',
+                fontWeight: 'bold',
+                fontSize: '0.8em'
+            };
+        };
+
         return (
             <div style={style}>
+                <div style={getFieldLabelStyle()}>{fieldIndex}</div>
                 {field.map((player, idx) => (
                     <img
                         key={idx}
@@ -323,7 +319,7 @@ function Game() {
         }
     };
 
-    function flattenTiles({tiles, isCenter}) {
+    function flattenTiles({ tiles, isCenter }) {
         const result = [];
         tiles.forEach(tile => {
             for (let i = 0; i < tile.number_of_tiles; i++) {
@@ -341,17 +337,17 @@ function Game() {
 
     function convertColor(color) {
         switch (color) {
-            case 'B': return 'Blau';
-            case 'Y': return 'Grün';
-            case 'R': return 'Rot';
-            case 'K': return 'Lila';
-            case 'W': return 'Weiß';
+            case 'B': return 'Blue';
+            case 'Y': return 'Green';
+            case 'R': return 'Red';
+            case 'K': return 'Purple';
+            case 'W': return 'White';
             default: return 'Empty';
         }
     }
 
     function Factory({ tiles, factoryIndex, isCenter }) {
-        const flatTiles = flattenTiles({tiles, isCenter});
+        const flatTiles = flattenTiles({ tiles, isCenter });
         const moveContext = getMove();
 
         return (
@@ -386,9 +382,9 @@ function Game() {
         if (!backgroundColor) {
             return <div style={{ ...styles.tileSquare, border }} onClick={onClick}>{text}</div>;
         }
-        
+
         if (backgroundColor === 'Empty') {
-            return <div style={{ ...styles.tileSquare, border, ...styles.missingTile }} onClick={onClick}>{text}</div>;
+            return <div style={{ border, ...styles.missingTile }} onClick={onClick}>{text}</div>;
         }
 
         const imageSrc = images(`./Azul_Kachel_${backgroundColor}.png`);
@@ -487,20 +483,21 @@ function Game() {
 
 
     function PlayerBoard({ playerData, playerNumber, currentPlayer }) {
-        // console.log('Player Data Read: ', playerSettings);
-
-        const playerName = playerSettings.players && playerSettings.players[playerNumber]
-            ? playerSettings.players[playerNumber].name
+        const player = playerSettings.players && playerSettings.players[playerNumber]
+            ? playerSettings.players[playerNumber]
             : `undefined name`;
 
         return (
             <div style={{
                 ...styles.darkBoardWraper,
-                border: playerNumber === currentPlayer ? '2px light red' : '2px light black',
+                boxShadow:
+                    (playerNumber === currentPlayer ? '0px 0px 8px 2px rgba(255, 255, 255, 0.7), inset 10px 10px 10px rgba(0, 0, 0, 0.3), inset -10px -10px 15px rgba(255, 255, 255, 0.15)' : 'inset 10px 10px 10px rgba(0, 0, 0, 0.3), inset -10px -10px 15px rgba(255, 255, 255, 0.15)')
             }}>
                 <div>
-                    <h2 style={{ color: playerNumber === currentPlayer ? 'white' : 'black' }}>
-                        {playerName}
+                    <h2 style={{
+                        color: player.color, padding: '10px', marginBottom: '10px', display: 'inline-block', boxShadow: 'inset 3px 3px 3px rgba(0, 0, 0, 0.3), inset -3px -3px 3px rgba(255, 255, 255, 0.15)', backgroundColor: 'rgba(80, 15, 15, 0.2)', borderRadius: '5px'
+                    }}>
+                        {player.name}
                     </h2>
                     <div style={styles.gameComponents}>
                         <Pattern playerNumber={playerNumber} patternData={playerData.pattern} />
@@ -529,16 +526,9 @@ function Game() {
             {(gameStatus === "running") && board && (
                 <MoveContext.Provider value={moveContext}>
                     <Scoreboard />
-                    <h1 style={{ color: 'white', ...styles.darkBoardWraper, padding: '10px', borderRadius: '5px', }}>
+                    <h1 style={{ color: playerSettings.players[board.current_player].color, ...styles.darkBoardWraper, padding: '10px', borderRadius: '5px', }}>
                         {playerSettings.players[board.current_player].name + " ist am Zug"}
                     </h1>
-                    <div>
-                        <button onClick={undoMove}>Undo</button>
-                        <button onClick={redoMove}>Redo</button>
-                        <button onClick={toggleTimer}>
-                            {isTimerActive ? 'Pause Timer' : 'Start Timer'}
-                        </button>
-                    </div>
                     <div style={styles.board}>
                         <div className="board-row" style={styles.factoryRow}>
                             <Factories factories={board.factories} />
@@ -548,6 +538,16 @@ function Game() {
                                 <PlayerBoard key={index} playerData={board.players[index]} playerNumber={index} currentPlayer={board.current_player} />
                             ))}
                         </div>
+                    </div>
+                    <div>
+                        <button onClick={start}>Start</button>
+                        <button onClick={undoMove}>Undo</button>
+                        <button onClick={redoMove}>Redo</button>
+                        <button onClick={end}>End</button>
+                        <button onClick={toggleQueue}>
+                            {boardQueueActive ? 'Deactivate auto increment' : 'Activate auto increment'}
+                        </button>
+
                     </div>
                 </MoveContext.Provider>
             )}

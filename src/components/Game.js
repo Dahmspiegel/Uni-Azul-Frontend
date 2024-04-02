@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { getWebSocket } from '../webSocketContext';
-import { MoveContext, getMove } from '../MoveContext';
+import { MoveContext, getMove } from '../context/MoveContext';
 const images = require.context('../images/', false, /\.png$/);
 import { gameData } from './GameData';
 import { usePlayerSettings } from '../context/playerSettingsContext';
